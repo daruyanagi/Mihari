@@ -9,6 +9,7 @@ using System.Windows;
 namespace Mihari
 {
     using System.Collections.ObjectModel;
+    using System.Deployment.Application;
     using System.IO;
     using System.Runtime.InteropServices;
     using System.Threading;
@@ -28,7 +29,6 @@ namespace Mihari
         private string exePath = string.Empty;
         private string exeDir = string.Empty;
         private string exeVersion = string.Empty;
-        private string exeNameAndVersion = string.Empty;
         private ObservableCollection<FileOperationModel> log = new ObservableCollection<FileOperationModel>();
 
         public ObservableCollection<FileOperationModel> Log { get { return log; } }
@@ -186,7 +186,21 @@ namespace Mihari
 
             foreach (var watcher in watchers) watcher.EnableRaisingEvents = true;
 
-            Notify(exeNameAndVersion, "Monitoring is started.");
+            Notify(exeName, "Monitoring is started.");
+        }
+
+        private string GetVersion()
+        {
+            if (!ApplicationDeployment.IsNetworkDeployed) return String.Empty;
+
+            var version = ApplicationDeployment.CurrentDeployment.CurrentVersion;
+            return string.Format(
+                "{0}.{1}.{2}.{3}",
+                version.Major,
+                version.Minor,
+                version.Build,
+                version.Revision
+            );
         }
 
         private void Application_Startup(object sender, StartupEventArgs e)
@@ -210,8 +224,7 @@ namespace Mihari
             exeName = this.GetType().Assembly.GetName().Name;
             exePath = Environment.GetCommandLineArgs().First();
             exeDir = Path.GetDirectoryName(exePath);
-            exeVersion = this.GetType().Assembly.GetName().Version.ToString();
-            exeNameAndVersion = string.Format("{0} v{1}", exeName, exeVersion);
+            exeVersion = GetVersion(); // this.GetType().Assembly.GetName().Version.ToString();
 
             mutex = new Mutex(false, exeName);
 

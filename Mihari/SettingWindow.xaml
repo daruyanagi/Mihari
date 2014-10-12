@@ -57,27 +57,27 @@
 
         <CheckBox Grid.Row="0" Grid.Column="2"
                   Content="Toast Enabled"
-                  IsChecked="{Binding ToastEnabled}" />
+                  IsChecked="{Binding ToastEnabled, Mode=TwoWay}" />
 
         <CheckBox Grid.Row="1" Grid.Column="2"
                   Content="Ignore RecycleBin"
-                  IsChecked="{Binding IgnoreRecycleBin}" />
+                  IsChecked="{Binding IgnoreRerecycleBin, Mode=TwoWay}" />
 
         <CheckBox Grid.Row="2" Grid.Column="2"
                   Content="Ignore Created"
-                  IsChecked="{Binding IgnoreCreated}" />
+                  IsChecked="{Binding IgnoreCreated, Mode=TwoWay}" />
 
         <CheckBox Grid.Row="3" Grid.Column="2"
                   Content="Ignore Deleted"
-                  IsChecked="{Binding IgnoreDeleted}" />
+                  IsChecked="{Binding IgnoreDeleted, Mode=TwoWay}" />
 
         <CheckBox Grid.Row="4" Grid.Column="2"
                   Content="Ignore Changed"
-                  IsChecked="{Binding IgnoreChanged}" />
+                  IsChecked="{Binding IgnoreChanged, Mode=TwoWay}" />
 
         <CheckBox Grid.Row="5" Grid.Column="2"
                   Content="Ignore Renemaed"
-                  IsChecked="{Binding IgnoreRenemaed}" />
+                  IsChecked="{Binding IgnoreRenemaed, Mode=TwoWay}" />
         
         <StackPanel Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="3"
                     Orientation="Horizontal" FlowDirection="RightToLeft">
