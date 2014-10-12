@@ -1,0 +1,118 @@
+﻿<Window x:Class="Mihari.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:Mihari"
+        Loaded="Window_Loaded"
+        Closing="Window_Closing"
+        StateChanged="Window_StateChanged"
+        IsVisibleChanged="Window_IsVisibleChanged"
+        Title="{Binding AppName}" Height="600" Width="800">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Grid Grid.Column="0" Grid.Row="0" Margin="16">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="240" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0" Grid.Row="0" Padding="4" FontSize="24"
+                       Text="{Binding AppName, Mode=TwoWay}">Sample</TextBlock>
+
+            <TextBlock Grid.Column="1" Grid.Row="0" Padding="7"
+                       VerticalAlignment="Bottom"
+                       Foreground="DimGray"
+                       Text="{Binding AppVersion, Mode=TwoWay}">1.0.0.0</TextBlock>
+
+            <TextBox Grid.Column="2" Grid.Row="0" Padding="4"
+                     VerticalAlignment="Bottom"
+                     local:PlaceHolderBehavior.PlaceHolderText="Path Filter"
+                     Text="{Binding Filter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     TextChanged="TextBox_TextChanged" />
+        </Grid>
+
+        <Grid Grid.Column="0" Grid.Row="2" Margin="16">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="240" />
+            </Grid.ColumnDefinitions>
+
+            <CheckBox Grid.Column="0" Grid.Row="0" Margin="8" VerticalAlignment="Center"
+                      IsChecked="{Binding IsFilterStartDateEnabled, Mode=TwoWay}"
+                      Checked="CheckBox_Checked"
+                      Unchecked="CheckBox_Checked">from:</CheckBox>
+            <DatePicker Grid.Column="1" Grid.Row="0" Margin="8"
+                        IsEnabled="{Binding IsFilterStartDateEnabled, Mode=TwoWay}"
+                        SelectedDate="{Binding FilterStartDate, Mode=TwoWay}"
+                        SelectedDateChanged="DatePicker_SelectedDateChanged"/>
+
+            <CheckBox Grid.Column="0" Grid.Row="1" Margin="8" VerticalAlignment="Center"
+                      IsChecked="{Binding IsFilterEndDateEnabled, Mode=TwoWay}"
+                      Checked="CheckBox_Checked"
+                      Unchecked="CheckBox_Checked">to:</CheckBox>
+            <DatePicker Grid.Column="1" Grid.Row="1" Margin="8"
+                        IsEnabled="{Binding IsFilterEndDateEnabled, Mode=TwoWay}"
+                        SelectedDate="{Binding FilterEndDate, Mode=TwoWay}"
+                        SelectedDateChanged="DatePicker_SelectedDateChanged"/>
+
+        </Grid>
+        
+        <ListView x:Name="listView" Grid.Column="0" Grid.Row="1" Margin="16, 0">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                </Style>
+            </ListView.ItemContainerStyle>
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn
+                            Header="Operation" Width="100"
+                            DisplayMemberBinding="{Binding ChangeType}" />
+                    <GridViewColumn Width="400" Header="Path">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Source="{Binding FileIcon}"
+                                           Width="16" Height="16"
+                                           VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                    <Border Width="8" />
+                                    <TextBlock>
+                                        <Hyperlink x:Name="hyperLink" Click="Hyperlink_Click" Tag="{Binding FilePath}">
+                                            <TextBlock Text="{Binding FilePath}"/>
+                                        </Hyperlink>
+                                    </TextBlock>
+                                </StackPanel>
+
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding IsMalicious}" Value="True">
+                                        <Setter TargetName="hyperLink" Property="Foreground" Value="Salmon"></Setter>
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn
+                            Header="DateTime" Width="200"
+                            DisplayMemberBinding="{Binding DateTime}" />
+                </GridView>
+            </ListView.View>
+        </ListView>
+    </Grid>
+</Window>
