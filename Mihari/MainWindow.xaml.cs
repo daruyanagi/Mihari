@@ -123,5 +123,10 @@ namespace Mihari
         {
 
         }
+
+        private void SettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            new SettingWindow().ShowDialog();
+        }
     }
 }

@@ -28,7 +28,7 @@
     <InstallUrl>http://download.daruyanagi.net/mihari/</InstallUrl>
     <CreateWebPageOnPublish>true</CreateWebPageOnPublish>
     <WebPage>publish.htm</WebPage>
-    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationRevision>1</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
@@ -107,6 +107,10 @@
     </ApplicationDefinition>
     <Compile Include="FileOperationModel.cs" />
     <Compile Include="RelayCommand.cs" />
+    <Compile Include="SettingWindow.xaml.cs">
+      <DependentUpon>SettingWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="SettingWindowsViewModel.cs" />
     <Compile Include="ShellHelpers.cs" />
     <Compile Include="StringExtensions.cs" />
     <Page Include="MainWindow.xaml">
@@ -122,6 +126,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="SettingWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MainWindowViewModel.cs" />

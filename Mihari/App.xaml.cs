@@ -10,6 +10,7 @@ namespace Mihari
 {
     using System.Collections.ObjectModel;
     using System.IO;
+    using System.Runtime.InteropServices;
     using System.Threading;
     using System.Windows.Threading;
 
@@ -20,8 +21,8 @@ namespace Mihari
     {
         private const string MESSAGE_FORMAT = "{0} at {1}"; 
 
-        private Mutex mutex = null;
-        private MainWindow mainWindow = null;
+        private static Mutex mutex = null;
+        private static MainWindow mainWindow = null;
         private System.Windows.Forms.NotifyIcon notifyIcon = null;
         private string exeName = string.Empty;
         private string exePath = string.Empty;
@@ -41,6 +42,22 @@ namespace Mihari
         public bool IgnoreRenamed { get { return Mihari.Properties.Settings.Default.IgnoreRenamed; } }
         public bool ToastEnabled { get { return Mihari.Properties.Settings.Default.ToastEnabled; } }
         public int HowLongLogKeeps { get { return Mihari.Properties.Settings.Default.HowLongLogKeeps; } }
+
+        [DllImportAttribute("user32.dll")]
+        public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+
+        [DllImportAttribute("user32.dll")]
+        public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        [DllImportAttribute("user32.dll")]
+        public static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        public static void ShowToFront(string windowName)
+        {
+            IntPtr firstInstance = FindWindow(null, windowName);
+            ShowWindow(firstInstance, 1);
+            SetForegroundWindow(firstInstance);
+        }
 
         private void watcher_Renamed(object sender, RenamedEventArgs e)
         {
@@ -92,49 +109,17 @@ namespace Mihari
 
         private void Notify(string title, string message)
         {
-            if (Environment.OSVersion.Version.Major >= 6 && Environment.OSVersion.Version.Minor >= 2 && ToastEnabled)
+            if (ToastEnabled && Environment.OSVersion.Version.Major >= 6 && Environment.OSVersion.Version.Minor >= 2)
                 ShellHelpers.Toast.Show(exeName, title, message);
             else
                 notifyIcon.ShowBalloonTip(3 * 1000, title, message, System.Windows.Forms.ToolTipIcon.Warning);
         }
 
-        private void Application_Startup(object sender, StartupEventArgs e)
+        private void LoadLogFile(string filename = "log.txt")
         {
-            foreach (string arg in e.Args)
-            {
-                switch (arg)
-                {
-                    case "/start":
-
-                        break;
-                    case "/stop":
-
-                        break;
-                    default:
-
-                        break;
-                }
-            }
-
-            exeName = this.GetType().Assembly.GetName().Name;
-            exePath = Environment.GetCommandLineArgs().First();
-            exeDir = Path.GetDirectoryName(exePath);
-            exeVersion = this.GetType().Assembly.GetName().Version.ToString();
-            exeNameAndVersion = string.Format("{0} v{1}", exeName, exeVersion);
-
-            mutex = new Mutex(false, exeName);
-
-            if (!mutex.WaitOne(TimeSpan.Zero, false))
-            {
-                mainWindow.Show();
-                mutex.Close();
-                Shutdown();
-                return;
-            }
-
             try
             {
-                var content = File.ReadAllText(Path.Combine(exeDir, "log.txt"));
+                var content = File.ReadAllText(Path.Combine(exeDir, filename));
                 var lines = content.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
                 foreach (var line in lines)
                 {
@@ -142,8 +127,8 @@ namespace Mihari
                     log.Add(new FileOperationModel
                     {
                         DateTime = values[0],
-                        ChangeType = (WatcherChangeTypes) Enum.Parse(typeof(WatcherChangeTypes), values[1]),
-                        FilePath = values[2], 
+                        ChangeType = (WatcherChangeTypes)Enum.Parse(typeof(WatcherChangeTypes), values[1]),
+                        FilePath = values[2],
                     });
                 }
             }
@@ -151,28 +136,13 @@ namespace Mihari
             {
 
             }
+        }
 
-            ShellHelpers.Shortcut.Create(exeName); // Need for Toast
-
-            var watchers = FileExtsToWatch.Split(';').SelectMany(ext => Directory.GetLogicalDrives().Select(drive => {
-            {
-                var watcher = new FileSystemWatcher();
-                watcher.Path = drive;
-                watcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName;
-                watcher.Filter = ext;
-                watcher.IncludeSubdirectories = true;
-
-                watcher.Changed += new FileSystemEventHandler(watcher_Changed);
-                watcher.Created += new FileSystemEventHandler(watcher_Changed);
-                watcher.Deleted += new FileSystemEventHandler(watcher_Changed);
-                watcher.Renamed += new RenamedEventHandler(watcher_Renamed);
-                return watcher;
-            }}));
-
-            mainWindow = new MainWindow();
+        private void SetupNitfyIcon()
+        {
             var menuStrip = new System.Windows.Forms.ContextMenuStrip();
-            menuStrip.Items.Add(new System.Windows.Forms.ToolStripMenuItem("Show", null, (s, a) => { mainWindow.Show(); }));
-            menuStrip.Items.Add(new System.Windows.Forms.ToolStripMenuItem("Hide", null, (s, a) => { mainWindow.Hide(); }));
+            menuStrip.Items.Add(new System.Windows.Forms.ToolStripMenuItem("Show Setting Dialog", null, (s, a) => { new SettingWindow().ShowDialog(); }));
+            menuStrip.Items.Add(new System.Windows.Forms.ToolStripMenuItem("Show Log Window", null, (s, a) => { mainWindow.Show(); }));
             menuStrip.Items.Add(new System.Windows.Forms.ToolStripSeparator());
             menuStrip.Items.Add(new System.Windows.Forms.ToolStripMenuItem("Exit", null, (s, a) => { Shutdown(); }));
 
@@ -186,14 +156,81 @@ namespace Mihari
 
             notifyIcon.MouseDoubleClick += (s, a) =>
             {
-                mainWindow.Visibility = (mainWindow.Visibility == Visibility.Visible)
-                    ? Visibility.Hidden
-                    : Visibility.Visible;
+                mainWindow.Show();
             };
+        }
+
+        private static IEnumerable<FileSystemWatcher> watchers = null;
+
+        public void SetupWatcher()
+        {
+            watchers = FileExtsToWatch.Split(';').SelectMany(ext => Directory.GetLogicalDrives().Select(drive =>
+            {
+                {
+                    var watcher = new FileSystemWatcher()
+                    {
+                        Path = drive,
+                        NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName,
+                        Filter = ext,
+                        IncludeSubdirectories = true,
+                    };
+
+                    watcher.Changed += new FileSystemEventHandler(watcher_Changed);
+                    watcher.Created += new FileSystemEventHandler(watcher_Changed);
+                    watcher.Deleted += new FileSystemEventHandler(watcher_Changed);
+                    watcher.Renamed += new RenamedEventHandler(watcher_Renamed);
+
+                    return watcher;
+                }
+            }));
 
             foreach (var watcher in watchers) watcher.EnableRaisingEvents = true;
 
             Notify(exeNameAndVersion, "Monitoring is started.");
+        }
+
+        private void Application_Startup(object sender, StartupEventArgs e)
+        {
+            // foreach (string arg in e.Args)
+            // {
+            //     switch (arg)
+            //     {
+            //         case "/start":
+            // 
+            //             break;
+            //         case "/stop":
+            // 
+            //             break;
+            //         default:
+            // 
+            //             break;
+            //     }
+            // }
+
+            exeName = this.GetType().Assembly.GetName().Name;
+            exePath = Environment.GetCommandLineArgs().First();
+            exeDir = Path.GetDirectoryName(exePath);
+            exeVersion = this.GetType().Assembly.GetName().Version.ToString();
+            exeNameAndVersion = string.Format("{0} v{1}", exeName, exeVersion);
+
+            mutex = new Mutex(false, exeName);
+
+            if (!mutex.WaitOne(TimeSpan.Zero, false))
+            {
+                ShowToFront(exeName);
+                // mutex.ReleaseMutex();
+                mutex.Close();
+                mutex = null;
+                Shutdown();
+                return;
+            }
+
+            mainWindow = new MainWindow();
+
+            LoadLogFile();
+            ShellHelpers.Shortcut.Create(exeName); // Need for Toast
+            SetupNitfyIcon();
+            SetupWatcher();
         }
 
         private void Application_Exit(object sender, ExitEventArgs e)
@@ -205,7 +242,10 @@ namespace Mihari
                 mutex = null;
             }
 
-            notifyIcon.Dispose();
+            if (notifyIcon != null)
+            {
+                notifyIcon.Dispose();
+            }
         }
     }
 }
