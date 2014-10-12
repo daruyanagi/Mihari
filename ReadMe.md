@@ -2,7 +2,7 @@
 
 Mihari is tiny file monitor. It will notify you when any applications are created in your system.
 
-"Mihari (å©í£ÇËÅj" means a watchman, a guard, a lookout, a keeper in Japanese.
+"Mihari (å©í£ÇËÅj means a watchman, a guard, a lookout, a keeper in Japanese.
 
 ### System Requirements
 
@@ -10,6 +10,10 @@ Mihari is tiny file monitor. It will notify you when any applications are create
 - .NET Framework 4.5
 
 ### Release notes
+
+- 1.1.0.1 (2014/10/13)
+   - Setting Dialog
+   - [FIX] Mutex bug
 
 - 1.0.0.0 (2014/10/12)
    - Initial Release.
