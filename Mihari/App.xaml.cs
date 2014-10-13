@@ -71,7 +71,7 @@ namespace Mihari
 
         private void Record(string fullPath, WatcherChangeTypes changeType)
         {
-            if (IgnoreRerecycleBin && fullPath.Contains(@"$Recycle.Bin\")) return;
+            if (IgnoreRerecycleBin && fullPath.ToUpper().Contains(@"\$RECYCLE.BIN\")) return;
             if (IgnoreCreated && changeType == WatcherChangeTypes.Created) return;
             if (IgnoreDeleted && changeType == WatcherChangeTypes.Deleted) return;
             if (IgnoreChanged && changeType == WatcherChangeTypes.Changed) return;

@@ -12,6 +12,9 @@ Mihari is tiny file monitor. It will notify you when any applications are create
 ### Release notes
 
 - 1.1.0.3 (2014/10/13)
+   - [FIX] Ignore RecycleBin does not work.
+
+- 1.1.0.3 (2014/10/13)
    - [FIX] Can not save some setting.
 
 - 1.1.0.2 (2014/10/13)
