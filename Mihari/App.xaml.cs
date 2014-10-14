@@ -104,7 +104,15 @@ namespace Mihari
                 else
                     return working;
             });
-            File.WriteAllText(Path.Combine(exeDir, "log.txt"), content);
+
+            try
+            {
+                File.WriteAllText(Path.Combine(exeDir, "log.txt"), content);
+            }
+            catch(Exception exception)
+            {
+                System.Diagnostics.Debug.WriteLine(exception.Message);
+            }
         }
 
         private void Notify(string title, string message)
