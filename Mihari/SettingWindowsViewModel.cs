@@ -61,5 +61,17 @@ namespace Mihari
             get { return Mihari.Properties.Settings.Default.MaliciousExes; }
             set { Mihari.Properties.Settings.Default.MaliciousExes = value; RaisePropertyChanged("MaliciousExes"); }
         }
+
+        public bool DaruyanagiEdition
+        {
+            get { return Mihari.Properties.Settings.Default.DaruyanagiEdition; }
+            set { Mihari.Properties.Settings.Default.DaruyanagiEdition = value; RaisePropertyChanged("DaruyanagiEdition"); }
+        }
+
+        public bool RegisterStartUp
+        {
+            get { return Mihari.Properties.Settings.Default.RegisterStartUp; }
+            set { Mihari.Properties.Settings.Default.RegisterStartUp = value; RaisePropertyChanged("RegisterStartUp"); }
+        }
     }
 }

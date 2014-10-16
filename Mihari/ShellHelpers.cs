@@ -29,19 +29,6 @@ namespace ShellHelpers
 
     public class Shortcut
     {
-        public static void Create(string APP_ID)
-        {
-            var shortcutPath = string.Format(
-                @"{0}\Microsoft\Windows\Start Menu\Programs\{1}.lnk",
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                APP_ID);
-
-            if (!File.Exists(shortcutPath))
-            {
-                Install(APP_ID, shortcutPath);
-            }
-        }
-
         public static void Install(string APP_ID, string shortcutPath)
         {
             var exePath = Process.GetCurrentProcess().MainModule.FileName;
@@ -59,6 +46,9 @@ namespace ShellHelpers
             }
 
             var newShortcutSave = (IPersistFile)newShortcut;
+
+            var dir = Path.GetDirectoryName(shortcutPath);
+            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
 
             ShellHelpers.ErrorHelper.VerifySucceeded(newShortcutSave.Save(shortcutPath, true));
         }

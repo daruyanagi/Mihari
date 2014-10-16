@@ -39,12 +39,12 @@ namespace Mihari
             }
         }
 
-        static readonly string[] keywords = Mihari.Properties.Settings.Default.MaliciousExes.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
         public bool IsMalicious
         {
             get
             {
-                return FilePath.Contains(keywords);
+                var keywords = Mihari.Properties.Settings.Default.MaliciousExes.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                return FilePath.Contains(true, keywords);
             }
         }
     }

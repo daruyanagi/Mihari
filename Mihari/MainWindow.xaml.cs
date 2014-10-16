@@ -57,6 +57,18 @@ namespace Mihari
             };
 
             listView.ItemsSource = defaultView;
+
+            if (Mihari.Properties.Settings.Default.DaruyanagiEdition)
+            {
+                listView.Background = new ImageBrush()
+                {
+                    ImageSource = new System.Windows.Media.Imaging.BitmapImage(new Uri("beeryanagi.png", UriKind.Relative)),
+                    Opacity = 0.3,
+                    Stretch = Stretch.None,
+                    AlignmentX = AlignmentX.Right,
+                    AlignmentY = AlignmentY.Bottom,
+                };
+            }
         }
 
         private void Hyperlink_Click(object sender, RoutedEventArgs e)
@@ -124,9 +136,9 @@ namespace Mihari
 
         }
 
-        private void SettingsButton_Click(object sender, RoutedEventArgs e)
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            new SettingWindow().ShowDialog();
+            Close();
         }
     }
 }

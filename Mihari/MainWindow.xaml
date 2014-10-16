@@ -7,7 +7,6 @@
         StateChanged="Window_StateChanged"
         IsVisibleChanged="Window_IsVisibleChanged"
         Title="{Binding AppName}"
-        ShowInTaskbar="False"
         Height="600" Width="800">
 
     <Grid>
@@ -74,8 +73,8 @@
                         SelectedDate="{Binding FilterEndDate, Mode=TwoWay}"
                         SelectedDateChanged="DatePicker_SelectedDateChanged"/>
 
-            <Button Grid.Column="3" Grid.Row="1" HorizontalAlignment="Right" Width="108" Click="SettingsButton_Click">
-                Settings
+            <Button Grid.Column="3" Grid.Row="1" HorizontalAlignment="Right" Width="108" Click="CloseButton_Click">
+                Close
             </Button>
         </Grid>
         

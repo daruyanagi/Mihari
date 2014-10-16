@@ -18,8 +18,9 @@
         </Style>
     </Window.Resources>
     
-    <Grid>
+    <Grid Margin="16">
         <Grid.RowDefinitions>
+            <RowDefinition Height="auto" />
             <RowDefinition Height="auto" />
             <RowDefinition Height="auto" />
             <RowDefinition Height="auto" />
@@ -35,14 +36,14 @@
         </Grid.ColumnDefinitions>
 
         <TextBlock Grid.Row="0" Grid.Column="0">
-            File extensions to watch
+            File extensions to watch (* need restart)
         </TextBlock>
 
         <TextBox Grid.Row="1" Grid.Column="0"
                  Text="{Binding FileExtsToWatch, Mode=TwoWay}"/>
 
         <TextBlock Grid.Row="2" Grid.Column="0">
-            Filename to highlight (* need restart)
+            Filename to highlight
         </TextBlock>
 
         <TextBox Grid.Row="3" Grid.Column="0"
@@ -78,11 +79,15 @@
         <CheckBox Grid.Row="5" Grid.Column="2"
                   Content="Ignore Renemaed"
                   IsChecked="{Binding IgnoreRenemaed, Mode=TwoWay}" />
+
+        <CheckBox Grid.Row="6" Grid.Column="2"
+                  Content="Register StartUp (* need restart)"
+                  IsChecked="{Binding RegisterStartUp, Mode=TwoWay}" />
         
-        <StackPanel Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="3"
+        <StackPanel Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="3"
                     Orientation="Horizontal" FlowDirection="RightToLeft">
-            <Button Content="Close" VerticalAlignment="Bottom" Margin="12" Padding="6" MinWidth="72" Click="CloseButton_Click" />
-            <Button Content="Apply" VerticalAlignment="Bottom" Margin="12" Padding="6" MinWidth="72" Click="ApplyButton_Click" />
+            <Button Content="Close" VerticalAlignment="Bottom" Margin="0, 0, 0, 0" Padding="6" MinWidth="72" Click="CloseButton_Click" />
+            <Button Content="Apply" VerticalAlignment="Bottom" Margin="12, 0, 0, 0" Padding="6" MinWidth="72" Click="ApplyButton_Click" />
         </StackPanel>
     </Grid>
 </Window>

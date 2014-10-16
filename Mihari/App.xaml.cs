@@ -8,6 +8,7 @@ using System.Windows;
 
 namespace Mihari
 {
+    using Microsoft.Win32;
     using System.Collections.ObjectModel;
     using System.Deployment.Application;
     using System.IO;
@@ -22,13 +23,12 @@ namespace Mihari
     {
         private const string MESSAGE_FORMAT = "{0} at {1}"; 
 
-        private static Mutex mutex = null;
-        private static MainWindow mainWindow = null;
-        private System.Windows.Forms.NotifyIcon notifyIcon = null;
-        private string exeName = string.Empty;
-        private string exePath = string.Empty;
-        private string exeDir = string.Empty;
-        private string exeVersion = string.Empty;
+        private static System.Windows.Forms.NotifyIcon notifyIcon = null;
+        private static string exeName = string.Empty;
+        private static string exeFullPath = string.Empty;
+        private static string exeDir = string.Empty;
+        private static string exeVersion = string.Empty;
+        private static string logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Mihari.log");
         private ObservableCollection<FileOperationModel> log = new ObservableCollection<FileOperationModel>();
 
         public ObservableCollection<FileOperationModel> Log { get { return log; } }
@@ -40,7 +40,8 @@ namespace Mihari
         public bool IgnoreDeleted { get { return Mihari.Properties.Settings.Default.IgnoreDeleted; } }
         public bool IgnoreChanged { get { return Mihari.Properties.Settings.Default.IgnoreChanged; } }
         public bool IgnoreRenamed { get { return Mihari.Properties.Settings.Default.IgnoreRenamed; } }
-        public bool ToastEnabled { get { return Mihari.Properties.Settings.Default.ToastEnabled; } }
+        public static bool ToastEnabled { get { return Mihari.Properties.Settings.Default.ToastEnabled; } }
+        public static bool RegisterStartUp { get { return Mihari.Properties.Settings.Default.RegisterStartUp; } }
         public int HowLongLogKeeps { get { return Mihari.Properties.Settings.Default.HowLongLogKeeps; } }
 
         [DllImportAttribute("user32.dll")]
@@ -52,11 +53,34 @@ namespace Mihari
         [DllImportAttribute("user32.dll")]
         public static extern bool SetForegroundWindow(IntPtr hWnd);
 
-        public static void ShowToFront(string windowName)
+        [STAThread]
+        public static void Main(string[] args)
         {
-            IntPtr firstInstance = FindWindow(null, windowName);
-            ShowWindow(firstInstance, 1);
-            SetForegroundWindow(firstInstance);
+            const string appID = "d508ee35-ad63-45a1-8403-909d4b784a9b";
+
+            exeName = System.Reflection.Assembly.GetEntryAssembly().GetName().Name;
+            exeFullPath = Environment.GetCommandLineArgs()[0];
+            exeDir = Path.GetDirectoryName(exeFullPath);
+            exeVersion = GetVersion();
+
+            RegisterShortcutToStartMenu(exeName); // Need for Toast
+            RegisterStartup(RegisterStartUp);
+
+            using (var mutex = new Mutex(false, appID))
+            {
+                if (mutex.WaitOne(TimeSpan.Zero, false))
+                {
+                    var app = new App();
+                    app.InitializeComponent();
+                    app.Run();
+                }
+                else
+                {
+                    Notify(exeName, "Already running.");
+                }
+
+                mutex.ReleaseMutex();
+            }
         }
 
         private void watcher_Renamed(object sender, RenamedEventArgs e)
@@ -71,7 +95,7 @@ namespace Mihari
 
         private void Record(string fullPath, WatcherChangeTypes changeType)
         {
-            if (IgnoreRerecycleBin && fullPath.ToUpper().Contains(@"\$RECYCLE.BIN\")) return;
+            if (IgnoreRerecycleBin && fullPath.Contains(true, @"\$RECYCLE.BIN\")) return;
             if (IgnoreCreated && changeType == WatcherChangeTypes.Created) return;
             if (IgnoreDeleted && changeType == WatcherChangeTypes.Deleted) return;
             if (IgnoreChanged && changeType == WatcherChangeTypes.Changed) return;
@@ -97,25 +121,10 @@ namespace Mihari
 
             Notify(fileName, message);
 
-            var content = log.Aggregate(string.Empty, (working, next) =>
-            {
-                if (DateTime.Parse(next.DateTime) > DateTime.Now.AddDays(-HowLongLogKeeps))
-                    return working + string.Format("{0}\t{1}\t{2}\r\n", next.DateTime, next.ChangeType, next.FilePath);
-                else
-                    return working;
-            });
-
-            try
-            {
-                File.WriteAllText(Path.Combine(exeDir, "log.txt"), content);
-            }
-            catch(Exception exception)
-            {
-                System.Diagnostics.Debug.WriteLine(exception.Message);
-            }
+            SaveLogFile(logPath);
         }
 
-        private void Notify(string title, string message)
+        private static void Notify(string title, string message)
         {
             if (ToastEnabled && Environment.OSVersion.Version.Major >= 6 && Environment.OSVersion.Version.Minor >= 2)
                 ShellHelpers.Toast.Show(exeName, title, message);
@@ -123,11 +132,34 @@ namespace Mihari
                 notifyIcon.ShowBalloonTip(3 * 1000, title, message, System.Windows.Forms.ToolTipIcon.Warning);
         }
 
-        private void LoadLogFile(string filename = "log.txt")
+        private void SaveLogFile(string filename)
         {
             try
             {
-                var content = File.ReadAllText(Path.Combine(exeDir, filename));
+                var content = log.Aggregate(string.Empty, (working, next) =>
+                {
+                    if (DateTime.Parse(next.DateTime) > DateTime.Now.AddDays(-HowLongLogKeeps))
+                        return working + string.Format("{0}\t{1}\t{2}\r\n", next.DateTime, next.ChangeType, next.FilePath);
+                    else
+                        return working;
+                });
+
+                var dir = Path.GetDirectoryName(filename);
+                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+
+                File.WriteAllText(filename, content);
+            }
+            catch (Exception exception)
+            {
+                System.Diagnostics.Debug.WriteLine(exception.Message);
+            }
+        }
+
+        private void LoadLogFile(string filename)
+        {
+            try
+            {
+                var content = File.ReadAllText(filename);
                 var lines = content.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
                 foreach (var line in lines)
                 {
@@ -146,25 +178,30 @@ namespace Mihari
             }
         }
 
+        private MainWindow logWindow = null;
+        private MainWindow LogWindow { get { if (logWindow == null) logWindow = new MainWindow(); return logWindow; } }
+        private SettingWindow settingWindow = null;
+        private SettingWindow SettingWindow { get { if (settingWindow == null) settingWindow = new SettingWindow(); return settingWindow; } }
+
         private void SetupNitfyIcon()
         {
             var menuStrip = new System.Windows.Forms.ContextMenuStrip();
-            menuStrip.Items.Add(new System.Windows.Forms.ToolStripMenuItem("Show Setting Dialog", null, (s, a) => { new SettingWindow().ShowDialog(); }));
-            menuStrip.Items.Add(new System.Windows.Forms.ToolStripMenuItem("Show Log Window", null, (s, a) => { mainWindow.Show(); }));
+            menuStrip.Items.Add(new System.Windows.Forms.ToolStripMenuItem("Show Setting Dialog", null, (s, a) => { SettingWindow.ShowForeground(); }));
+            menuStrip.Items.Add(new System.Windows.Forms.ToolStripMenuItem("Show Log Window", null, (s, a) => { LogWindow.ShowForeground(); }));
             menuStrip.Items.Add(new System.Windows.Forms.ToolStripSeparator());
             menuStrip.Items.Add(new System.Windows.Forms.ToolStripMenuItem("Exit", null, (s, a) => { Shutdown(); }));
 
             notifyIcon = new System.Windows.Forms.NotifyIcon()
             {
                 Text = exeName,
-                Icon = System.Drawing.Icon.ExtractAssociatedIcon(exePath),
+                Icon = System.Drawing.Icon.ExtractAssociatedIcon(exeFullPath),
                 Visible = true,
                 ContextMenuStrip = menuStrip,
             };
 
             notifyIcon.MouseDoubleClick += (s, a) =>
             {
-                mainWindow.Show();
+                LogWindow.ShowForeground();
             };
         }
 
@@ -172,13 +209,22 @@ namespace Mihari
 
         public void SetupWatcher()
         {
+            if (watchers != null)
+            {
+                foreach (var watcher in watchers)
+                {
+                    watcher.EnableRaisingEvents = false; // これをやってもイベントが重複して飛んでくる。うまくうごかん。
+                    watcher.Dispose();
+                }
+            }
+
             watchers = FileExtsToWatch.Split(';').SelectMany(ext => Directory.GetLogicalDrives().Select(drive =>
             {
                 {
                     var watcher = new FileSystemWatcher()
                     {
                         Path = drive,
-                        NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName,
+                        NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName,
                         Filter = ext,
                         IncludeSubdirectories = true,
                     };
@@ -192,76 +238,65 @@ namespace Mihari
                 }
             }));
 
-            foreach (var watcher in watchers) watcher.EnableRaisingEvents = true;
-
-            Notify(exeName, "Monitoring is started.");
+            foreach (var watcher in watchers)
+            {
+                watcher.EnableRaisingEvents = true;
+            }
         }
 
-        private string GetVersion()
+        private static string GetVersion()
         {
+            // ClickOnce のバージョンとアセンブリのバージョン、なんで別やねん
+
             if (!ApplicationDeployment.IsNetworkDeployed) return String.Empty;
 
             var version = ApplicationDeployment.CurrentDeployment.CurrentVersion;
             return string.Format(
                 "{0}.{1}.{2}.{3}",
-                version.Major,
-                version.Minor,
-                version.Build,
-                version.Revision
+                version.Major, version.Minor, version.Build, version.Revision
             );
+        }
+
+        private static void RegisterShortcutToStartMenu(string APP_ID)
+        {
+            var shortcutPath = string.Format(
+                @"{0}\{1}\{1}.lnk",
+                Environment.GetFolderPath(Environment.SpecialFolder.StartMenu),
+                APP_ID);
+
+            if (!File.Exists(shortcutPath))
+            {
+                ShellHelpers.Shortcut.Install(APP_ID, shortcutPath);
+            }
+        }
+
+        private static void RegisterStartup(bool enabled)
+        {
+            var registryKey = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", true);
+
+            if (enabled)
+            {
+                registryKey.SetValue(exeName, exeFullPath);
+            }
+            else
+            {
+                registryKey.DeleteValue(exeName);
+            }
         }
 
         private void Application_Startup(object sender, StartupEventArgs e)
         {
-            // foreach (string arg in e.Args)
-            // {
-            //     switch (arg)
-            //     {
-            //         case "/start":
-            // 
-            //             break;
-            //         case "/stop":
-            // 
-            //             break;
-            //         default:
-            // 
-            //             break;
-            //     }
-            // }
+            LoadLogFile(logPath);
 
-            exeName = this.GetType().Assembly.GetName().Name;
-            exePath = Environment.GetCommandLineArgs().First();
-            exeDir = Path.GetDirectoryName(exePath);
-            exeVersion = GetVersion(); // this.GetType().Assembly.GetName().Version.ToString();
-
-            mutex = new Mutex(false, exeName);
-
-            if (!mutex.WaitOne(TimeSpan.Zero, false))
-            {
-                ShowToFront(exeName);
-                // mutex.ReleaseMutex();
-                mutex.Close();
-                mutex = null;
-                Shutdown();
-                return;
-            }
-
-            mainWindow = new MainWindow();
-
-            LoadLogFile();
-            ShellHelpers.Shortcut.Create(exeName); // Need for Toast
             SetupNitfyIcon();
             SetupWatcher();
+
+            Notify(exeName, "Monitoring is started.");
         }
 
         private void Application_Exit(object sender, ExitEventArgs e)
         {
-            if (mutex != null)
-            {
-                mutex.ReleaseMutex();
-                mutex.Close();
-                mutex = null;
-            }
+            SaveLogFile(logPath);
 
             if (notifyIcon != null)
             {

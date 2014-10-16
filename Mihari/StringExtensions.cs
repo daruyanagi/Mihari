@@ -9,9 +9,16 @@ namespace Mihari
 {
     public static class StringExtensions
     {
-        public static bool Contains(this string source, string[] keywords)
+        public static bool Contains(this string source, bool ignoreCase, params string[] keywords)
         {
-            return keywords.Any(_ => source.Contains(_));
+            if (ignoreCase)
+            {
+                return keywords.Any(_ => source.ToLower().Contains(_.ToLower()));
+            }
+            else
+            {
+                return keywords.Any(_ => source.Contains(_));
+            }
         }
 
         public static bool WildcardMatch(this string source, string pattern, bool ignoreCase = true)

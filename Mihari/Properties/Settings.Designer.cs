@@ -130,5 +130,29 @@ namespace Mihari.Properties {
                 this["HowLongLogKeeps"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool DaruyanagiEdition {
+            get {
+                return ((bool)(this["DaruyanagiEdition"]));
+            }
+            set {
+                this["DaruyanagiEdition"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool RegisterStartUp {
+            get {
+                return ((bool)(this["RegisterStartUp"]));
+            }
+            set {
+                this["RegisterStartUp"] = value;
+            }
+        }
     }
 }

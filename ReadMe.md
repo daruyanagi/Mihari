@@ -11,6 +11,13 @@ Mihari is tiny file monitor. It will notify you when any applications are create
 
 ### Release notes
 
+- 2.0.0.6 (2014/10/16)
+   - Register Startup
+   - Refactoring
+   - Daruyanagi Edition
+   - Minor UI Changes
+   - [FIX] Duplicated logs on settings being applied.
+
 - 1.1.0.5 (2014/10/14)
    - [FIX] Crash I/O Exception.
 

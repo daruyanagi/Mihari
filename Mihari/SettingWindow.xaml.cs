@@ -40,7 +40,8 @@ namespace Mihari
         private void ApplyButton_Click(object sender, RoutedEventArgs e)
         {
             Mihari.Properties.Settings.Default.Save();
-            (App.Current as App).SetupWatcher();
+            // (App.Current as App).SetupWatcher();
+            Close();
         }
     }
 }
